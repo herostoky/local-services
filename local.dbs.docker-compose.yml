@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  local-postgresql:
+    image: postgres:latest
+    container_name: local-postgresql
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: acKLQLqf5dYaPpnBkT
+      POSTGRES_DB: test-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.2
+    ports:
+      - "5433:5432"
+
+  local-mysql:
+    image: mysql:latest
+    container_name: local-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test-db
+      MYSQL_USER: local-user
+      MYSQL_PASSWORD: AHRmA7nD9PBa6zkm3Q
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.3
+    ports:
+      - "3307:3306"
+
+  local-mssql:
+    image: mcr.microsoft.com/mssql/server:latest
+    container_name: local-mssql
+    environment:
+      SA_PASSWORD: "d8KEtHahXskAy5a6k6"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.4
+    ports:
+      - "1434:1433"
+
+  local-mongodb:
+    image: mongo:latest
+    container_name: local-mongodb
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.5
+    ports:
+      - "27017:27017"
+
+  local-seq:
+    image: datalust/seq:latest
+    container_name: local-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_API_CANONICALURI: "https://seq.example.com"
+      SEQ_FIRSTRUN_ADMINPASSWORDHASH: "QF7lUK4BfMJB3sdFbGu2lSOzZXChl8UXftmkRb08qHIGryBZU3uvgTLx2kIv/ppDSe8OOwD1GjiyQKrgwjgzyJba9e4yr4B9nHNbPJc5D+WW"
+      # admin password will be : dALCDmtpsqrPpKTg48M
+    volumes:
+      - seq_data:/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.7
+    ports:
+      - "5342:5341"
+      - "5343:80"
+
+  local-rabbit-mq:
+    image: rabbitmq:4.0.3-management-alpine
+    container_name: local-rabbit-mq
+    environment:
+      RABBITMQ_DEFAULT_USER: "ruser"
+      RABBITMQ_DEFAULT_PASS: "eN3NkJq98hYXRtY7p5jLabMpxQPa5M"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+      - rabbitmq_logs:/var/log/rabbitmq/
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.8
+    ports:
+      - "5673:5672" # api port
+      - "15673:15672" # web port
+
+#  local-oracle-db:
+#    image: container-registry.oracle.com/database/free:latest
+#    container_name: local-oracle-db
+#    environment:
+#      ORACLE_PWD: "Q9FjrFepHoPp5SsRzq"
+#    volumes:
+#      - oracle_data:/opt/oracle/oradata
+#    networks:
+#      my_network:
+#        ipv4_address: 172.18.0.6
+#    ports:
+#      - "1521:1521"
+
+networks:
+  my_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/24
+
+volumes:
+  postgres_data:
+  mysql_data:
+  mssql_data:
+  mongo_data:
+  seq_data:
+  rabbitmq_data:
+  rabbitmq_logs:
+#  oracle_data:
+
+
+
+# docker run -it mcr.microsoft.com/azure-cli:cbl-mariner2.0
+
