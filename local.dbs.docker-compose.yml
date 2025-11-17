@@ -88,18 +88,18 @@ services:
       - "5673:5672" # api port
       - "15673:15672" # web port
 
-#  local-oracle-db:
-#    image: container-registry.oracle.com/database/free:latest
-#    container_name: local-oracle-db
-#    environment:
-#      ORACLE_PWD: "Q9FjrFepHoPp5SsRzq"
-#    volumes:
-#      - oracle_data:/opt/oracle/oradata
-#    networks:
-#      my_network:
-#        ipv4_address: 172.18.0.6
-#    ports:
-#      - "1521:1521"
+  #  local-oracle-db:
+  #    image: container-registry.oracle.com/database/free:latest
+  #    container_name: local-oracle-db
+  #    environment:
+  #      ORACLE_PWD: "Q9FjrFepHoPp5SsRzq"
+  #    volumes:
+  #      - oracle_data:/opt/oracle/oradata
+  #    networks:
+  #      my_network:
+  #        ipv4_address: 172.18.0.6
+  #    ports:
+  #      - "1521:1521"
 
   local-maildev:
     image: maildev/maildev
@@ -111,6 +111,36 @@ services:
       - "1081:1080"
       - "1026:1025"
 
+  local-kafka:
+    image: apache/kafka:latest
+    container_name: local-kafka
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    command:
+      - sh
+      - -c
+      - |
+        # Initialize KRaft metadata storage if not initialized
+        if [ ! -d "/var/lib/kafka/data/meta.properties" ]; then
+          kafka-storage.sh format -t $(uuidgen) -c /etc/kafka/kraft/server.properties
+        fi
+        # Start Kafka
+        kafka-server-start.sh /etc/kafka/kraft/server.properties
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.10
+    ports:
+      - "9093:9092"
+      - "2182:2181"
+# docker run -it -p 8080:8080 -e DYNAMIC_CONFIG_ENABLED=true provectuslabs/kafka-ui:latest
 
 networks:
   my_network:
@@ -127,9 +157,7 @@ volumes:
   seq_data:
   rabbitmq_data:
   rabbitmq_logs:
-#  oracle_data:
-
-
-
+  kafka_data:
+  #  oracle_data:
 # docker run -it mcr.microsoft.com/azure-cli:cbl-mariner2.0
 
