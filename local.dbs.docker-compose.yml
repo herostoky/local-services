@@ -138,7 +138,40 @@ services:
       - "9093:9092"
       - "9094:9093"
       - "9095:9094"
-# docker run -d -p 8080:8080 --network local-services_my_network -e DYNAMIC_CONFIG_ENABLED=true -e KAFKA_CLUSTERS_0_NAME=local -e KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=local-kafka:9092 provectuslabs/kafka-ui:latest
+  # docker run --name local-kafka-ui -d -p 8080:8080 --network local-services_my_network -e DYNAMIC_CONFIG_ENABLED=true -e KAFKA_CLUSTERS_0_NAME=local -e KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=local-kafka:9092 provectuslabs/kafka-ui:latest
+
+  local-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.1
+    container_name: local-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false
+      - ELASTIC_PASSWORD=tn6ajSkJqfCbeEz89493
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.11
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+  # docker exec -it local-elasticsearch elasticsearch-service-tokens create elastic/kibana kibana-system
+
+  local-kibana:
+    image: docker.elastic.co/kibana/kibana:9.2.1
+    container_name: local-kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://local-elasticsearch:9200
+      # ELASTICSEARCH_USERNAME: "elastic"
+      ELASTICSEARCH_PASSWORD: "tn6ajSkJqfCbeEz89493"
+      ELASTICSEARCH_SERVICE_TOKEN: AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS1zeXN0ZW06SmtlMGtxa1RSQlc3TERNN1FLZzljQQ
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.12
+    ports:
+      - "5602:5601"
 
 networks:
   my_network:
@@ -156,6 +189,7 @@ volumes:
   rabbitmq_data:
   rabbitmq_logs:
   kafka_data:
+  es_data:
   #  oracle_data:
 # docker run -it mcr.microsoft.com/azure-cli:cbl-mariner2.0
 
