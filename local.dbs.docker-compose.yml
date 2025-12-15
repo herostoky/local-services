@@ -1,13 +1,16 @@
 services:
   local-postgresql:
-    image: postgres:latest
     container_name: local-postgresql
+    build:
+      context: .
+      dockerfile: local-postgresql.Dockerfile
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: acKLQLqf5dYaPpnBkT
       POSTGRES_DB: test-db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf
     networks:
       my_network:
         ipv4_address: 172.18.0.2
