@@ -176,6 +176,22 @@ services:
     ports:
       - "5602:5601"
 
+  local-minio:
+    image: minio/minio:latest
+    container_name: local-minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: "local_minio_admin"
+      MINIO_ROOT_PASSWORD: "FfDshsjGdcCpEQsNqmQEmHiBJL"
+    volumes:
+      - minio_data:/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.13
+    ports:
+      - "9001:9000"
+      - "9002:9001"
+
 networks:
   my_network:
     driver: bridge
@@ -193,6 +209,7 @@ volumes:
   rabbitmq_logs:
   kafka_data:
   es_data:
+  minio_data:
   #  oracle_data:
 # docker run -it mcr.microsoft.com/azure-cli:cbl-mariner2.0
 
