@@ -192,6 +192,19 @@ services:
       - "9001:9000"
       - "9002:9001"
 
+  local-redis:
+    image: redis:latest
+    container_name: local-redis
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.14
+    ports:
+      - "6380:6379"
+
 networks:
   my_network:
     driver: bridge
@@ -210,6 +223,8 @@ volumes:
   kafka_data:
   es_data:
   minio_data:
+  redis_data:
   #  oracle_data:
+
 # docker run -it mcr.microsoft.com/azure-cli:cbl-mariner2.0
 
