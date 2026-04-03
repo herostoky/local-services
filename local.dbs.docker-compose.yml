@@ -1,13 +1,16 @@
 services:
   local-postgresql:
-    image: postgres:latest
     container_name: local-postgresql
+    build:
+      context: .
+      dockerfile: local-postgresql.Dockerfile
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: acKLQLqf5dYaPpnBkT
       POSTGRES_DB: test-db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf
     networks:
       my_network:
         ipv4_address: 172.18.0.2
@@ -88,18 +91,18 @@ services:
       - "5673:5672" # api port
       - "15673:15672" # web port
 
-#  local-oracle-db:
-#    image: container-registry.oracle.com/database/free:latest
-#    container_name: local-oracle-db
-#    environment:
-#      ORACLE_PWD: "Q9FjrFepHoPp5SsRzq"
-#    volumes:
-#      - oracle_data:/opt/oracle/oradata
-#    networks:
-#      my_network:
-#        ipv4_address: 172.18.0.6
-#    ports:
-#      - "1521:1521"
+  #  local-oracle-db:
+  #    image: container-registry.oracle.com/database/free:latest
+  #    container_name: local-oracle-db
+  #    environment:
+  #      ORACLE_PWD: "Q9FjrFepHoPp5SsRzq"
+  #    volumes:
+  #      - oracle_data:/opt/oracle/oradata
+  #    networks:
+  #      my_network:
+  #        ipv4_address: 172.18.0.6
+  #    ports:
+  #      - "1521:1521"
 
   local-maildev:
     image: maildev/maildev
@@ -111,6 +114,96 @@ services:
       - "1081:1080"
       - "1026:1025"
 
+  local-kafka:
+    image: apache/kafka:latest
+    container_name: local-kafka
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://local-kafka:9092,EXTERNAL://localhost:9095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@local-kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 1
+      CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.10
+    ports:
+      - "9093:9092"
+      - "9094:9093"
+      - "9095:9094"
+  # docker run --name local-kafka-ui -d -p 8080:8080 --network local-services_my_network -e DYNAMIC_CONFIG_ENABLED=true -e KAFKA_CLUSTERS_0_NAME=local -e KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=local-kafka:9092 provectuslabs/kafka-ui:latest
+
+  local-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.1
+    container_name: local-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false
+      - ELASTIC_PASSWORD=tn6ajSkJqfCbeEz89493
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.11
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+  # docker exec -it local-elasticsearch elasticsearch-service-tokens create elastic/kibana kibana-system
+
+  local-kibana:
+    image: docker.elastic.co/kibana/kibana:9.2.1
+    container_name: local-kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://local-elasticsearch:9200
+      # ELASTICSEARCH_USERNAME: "elastic"
+      ELASTICSEARCH_PASSWORD: "tn6ajSkJqfCbeEz89493"
+      ELASTICSEARCH_SERVICE_TOKEN: AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS1zeXN0ZW06SmtlMGtxa1RSQlc3TERNN1FLZzljQQ
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.12
+    ports:
+      - "5602:5601"
+
+  local-minio:
+    image: minio/minio:latest
+    container_name: local-minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: "local_minio_admin"
+      MINIO_ROOT_PASSWORD: "FfDshsjGdcCpEQsNqmQEmHiBJL"
+    volumes:
+      - minio_data:/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.13
+    ports:
+      - "9001:9000"
+      - "9002:9001"
+
+  local-redis:
+    image: redis:latest
+    container_name: local-redis
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
+    networks:
+      my_network:
+        ipv4_address: 172.18.0.14
+    ports:
+      - "6380:6379"
 
 networks:
   my_network:
@@ -127,9 +220,11 @@ volumes:
   seq_data:
   rabbitmq_data:
   rabbitmq_logs:
-#  oracle_data:
-
-
+  kafka_data:
+  es_data:
+  minio_data:
+  redis_data:
+  #  oracle_data:
 
 # docker run -it mcr.microsoft.com/azure-cli:cbl-mariner2.0
 
